@@ -7,14 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Copy, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { customAlphabet } from "nanoid"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EXPIRY_OPTIONS } from "@/types/email"
 import { useCopy } from "@/hooks/use-copy"
 import { useConfig } from "@/hooks/use-config"
-import { EMAIL_CONFIG } from "@/config"
+import { generateFriendlyEmailName } from "@/lib/email-name"
 
 interface CreateDialogProps {
   onEmailCreated: () => void
@@ -52,8 +51,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     return matchedDomain || normalizedDomains[0]
   }
 
-  const generateRandomEmailName = customAlphabet(EMAIL_CONFIG.RANDOM_EMAIL_NAME_ALPHABET, EMAIL_CONFIG.RANDOM_EMAIL_NAME_LENGTH)
-  const generateRandomName = () => setEmailName(generateRandomEmailName())
+  const generateRandomName = () => setEmailName(generateFriendlyEmailName())
 
   const copyEmailAddress = () => {
     copyToClipboard(`${emailName}@${currentDomain}`)
@@ -140,7 +138,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-64 overflow-y-auto">
                   {config?.emailDomainsArray?.map(d => (
                     <SelectItem key={d} value={d}>@{d}</SelectItem>
                   ))}

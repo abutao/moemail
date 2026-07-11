@@ -8,7 +8,7 @@ import { signOut } from "next-auth/react"
 import { Github, Settings, Crown, Sword, User2, Gem, Mail } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { WebhookConfig } from "./webhook-config"
-import { PromotePanel } from "./promote-panel"
+import { UserManagementPanel } from "./user-management-panel"
 import { EmailServiceConfig } from "./email-service-config"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -147,7 +147,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
 
       {canManageConfig && <WebsiteConfigPanel />}
       {canManageConfig && <EmailServiceConfig />}
-      {canPromote && <PromotePanel />}
+      {canPromote && <UserManagementPanel />}
       {canManageWebhook && <ApiKeyPanel />}
 
       <div className="flex flex-col sm:flex-row gap-4 px-1">

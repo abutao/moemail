@@ -1,8 +1,50 @@
 import { createDb } from "@/lib/db"
-import { users } from "@/lib/schema"
-import { eq } from "drizzle-orm"
+import { emails, roles, userRoles, users } from "@/lib/schema"
+import { eq, like, or, sql } from "drizzle-orm"
 
 export const runtime = "edge"
+
+
+export async function GET(request: Request) {
+  try {
+    const db = createDb()
+    const url = new URL(request.url)
+    const searchText = url.searchParams.get("q")?.trim()
+    const limitParam = Number(url.searchParams.get("limit") || "100")
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 200) : 100
+
+    const searchPattern = searchText ? `%${searchText}%` : undefined
+    const rows = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        email: users.email,
+        image: users.image,
+        role: roles.name,
+        emailCount: sql<number>`count(distinct ${emails.id})`,
+      })
+      .from(users)
+      .leftJoin(userRoles, eq(userRoles.userId, users.id))
+      .leftJoin(roles, eq(roles.id, userRoles.roleId))
+      .leftJoin(emails, eq(emails.userId, users.id))
+      .where(searchPattern ? or(
+        like(users.email, searchPattern),
+        like(users.username, searchPattern),
+        like(users.name, searchPattern),
+      ) : undefined)
+      .groupBy(users.id, users.name, users.username, users.email, users.image, roles.name)
+      .limit(limit)
+
+    return Response.json({ users: rows })
+  } catch (error) {
+    console.error("Failed to list users:", error)
+    return Response.json(
+      { error: "Failed to list users" },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: Request) {
   try {

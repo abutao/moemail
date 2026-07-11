@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { customAlphabet } from "nanoid"
 import { createDb } from "@/lib/db"
 import { emails } from "@/lib/schema"
 import { eq, and, gt, sql } from "drizzle-orm"
 import { EXPIRY_OPTIONS } from "@/types/email"
 import { EMAIL_CONFIG } from "@/config"
+import { generateFriendlyEmailName } from "@/lib/email-name"
 import { getRequestContext } from "@cloudflare/next-on-pages"
 import { getUserId } from "@/lib/apiKey"
 import { getUserRole } from "@/lib/auth"
@@ -65,8 +65,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const generateRandomEmailName = customAlphabet(EMAIL_CONFIG.RANDOM_EMAIL_NAME_ALPHABET, EMAIL_CONFIG.RANDOM_EMAIL_NAME_LENGTH)
-    const address = `${name || generateRandomEmailName()}@${domain}`
+    const address = `${name || generateFriendlyEmailName()}@${domain}`
     const existingEmail = await db.query.emails.findFirst({
       where: eq(sql`LOWER(${emails.address})`, address.toLowerCase())
     })
