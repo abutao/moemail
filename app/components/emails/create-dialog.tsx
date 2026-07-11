@@ -27,6 +27,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [loading, setLoading] = useState(false)
   const [emailName, setEmailName] = useState("")
   const [currentDomain, setCurrentDomain] = useState("")
+  const [domainDropdownOpen, setDomainDropdownOpen] = useState(false)
   const [expiryTime, setExpiryTime] = useState(EXPIRY_OPTIONS[1].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
@@ -133,20 +134,38 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
-              <div className="w-[240px] space-y-1">
-                <select
-                  value={currentDomain}
-                  onChange={(e) => setCurrentDomain(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  title={`? ${config?.emailDomainsArray?.length ?? 0} ???`}
+              <div className="relative w-[240px]">
+                <button
+                  type="button"
+                  onClick={() => setDomainDropdownOpen(open => !open)}
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-left text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  {config?.emailDomainsArray?.map(d => (
-                    <option key={d} value={d}>@{d}</option>
-                  ))}
-                </select>
-                <div className="text-[11px] text-muted-foreground">
-                  ? {config?.emailDomainsArray?.length ?? 0} ??????????/???????
-                </div>
+                  <span className="truncate">@{currentDomain}</span>
+                  <span className="ml-2 text-muted-foreground">?</span>
+                </button>
+
+                {domainDropdownOpen && (
+                  <div className="absolute left-0 top-full z-[100] mt-1 w-[260px] rounded-md border bg-popover text-popover-foreground shadow-lg">
+                    <div className="border-b px-3 py-1.5 text-xs text-muted-foreground">
+                      {config?.emailDomainsArray?.length ?? 0} domains - scroll for more
+                    </div>
+                    <div className="max-h-56 overflow-y-auto p-1">
+                      {config?.emailDomainsArray?.map(d => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => {
+                            setCurrentDomain(d)
+                            setDomainDropdownOpen(false)
+                          }}
+                          className={`block w-full rounded-sm px-3 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground ${d === currentDomain ? "bg-accent text-accent-foreground" : ""}`}
+                        >
+                          @{d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <Button
