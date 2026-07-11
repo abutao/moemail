@@ -9,7 +9,6 @@ import { Copy, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EXPIRY_OPTIONS } from "@/types/email"
 import { useCopy } from "@/hooks/use-copy"
 import { useConfig } from "@/hooks/use-config"
@@ -134,17 +133,21 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
-              <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="w-[260px]">
-                  <div className="px-2 py-1 text-xs text-muted-foreground">? {config?.emailDomainsArray?.length ?? 0} ??????????</div>
+              <div className="w-[240px] space-y-1">
+                <select
+                  value={currentDomain}
+                  onChange={(e) => setCurrentDomain(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  title={`? ${config?.emailDomainsArray?.length ?? 0} ???`}
+                >
                   {config?.emailDomainsArray?.map(d => (
-                    <SelectItem key={d} value={d} className="py-1 text-xs">@{d}</SelectItem>
+                    <option key={d} value={d}>@{d}</option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+                <div className="text-[11px] text-muted-foreground">
+                  ? {config?.emailDomainsArray?.length ?? 0} ??????????/???????
+                </div>
+              </div>
             )}
             <Button
               variant="outline"
