@@ -54,9 +54,9 @@ export async function POST(request: Request) {
     }
 
     const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS")
-    const domains = domainString
+    const domains = domainString && domainString !== "moemail.app"
       ? domainString.split(',').map(domain => domain.trim()).filter(Boolean)
-      : ["moemail.app"]
+      : [...EMAIL_CONFIG.DEFAULT_EMAIL_DOMAINS]
 
     if (!domains || !domains.includes(domain)) {
       return NextResponse.json(
