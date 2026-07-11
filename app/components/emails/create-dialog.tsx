@@ -138,9 +138,10 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 <SelectTrigger className="w-[220px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="w-[240px]">
+                <SelectContent className="w-[260px]">
+                  <div className="px-2 py-1 text-xs text-muted-foreground">? {config?.emailDomainsArray?.length ?? 0} ??????????</div>
                   {config?.emailDomainsArray?.map(d => (
-                    <SelectItem key={d} value={d}>@{d}</SelectItem>
+                    <SelectItem key={d} value={d} className="py-1 text-xs">@{d}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
