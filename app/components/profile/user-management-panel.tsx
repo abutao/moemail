@@ -1,7 +1,7 @@
-﻿"use client"
+"use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Gem, Loader2, RefreshCw, Search, Shield, Sword, User2, Users } from "lucide-react"
+import { Gem, Loader2, RefreshCw, Search, Shield, Sword, Trash2, User2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -40,6 +40,7 @@ export function UserManagementPanel() {
   const [searchText, setSearchText] = useState("")
   const [loading, setLoading] = useState(false)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const { toast } = useToast()
 
   const loadUsers = useCallback(async () => {
@@ -93,6 +94,34 @@ export function UserManagementPanel() {
     }
   }
 
+  const deleteUser = async (user: ManagedUser) => {
+    if (user.role === ROLES.EMPEROR) return
+    const displayName = user.username || user.email || user.name || user.id
+    if (!window.confirm(`确定要删除用户 ${displayName} 吗？该用户的邮箱、API Key 等数据也会一起删除。`)) {
+      return
+    }
+
+    setDeletingUserId(user.id)
+    try {
+      const res = await fetch(`/api/roles/users/${user.id}`, { method: "DELETE" })
+      const data = await res.json().catch(() => ({})) as { error?: string }
+      if (!res.ok) throw new Error(data.error || "删除用户失败")
+      setUsers(current => current.filter(item => item.id !== user.id))
+      toast({
+        title: "用户已删除",
+        description: displayName,
+      })
+    } catch (error) {
+      toast({
+        title: "删除失败",
+        description: error instanceof Error ? error.message : "请稍后重试",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingUserId(null)
+    }
+  }
+
   return (
     <div className="bg-background rounded-lg border-2 border-primary/20 p-6">
       <div className="flex items-center gap-2 mb-6">
@@ -142,30 +171,41 @@ export function UserManagementPanel() {
               </div>
 
               {isEmperor ? (
-                <Button variant="outline" size="sm" disabled>管理员不可降级</Button>
+                <Button variant="outline" size="sm" disabled>管理员不可删除/降级</Button>
               ) : (
-                <Select
-                  value={(user.role || ROLES.CIVILIAN) as ManageableRole}
-                  onValueChange={(value) => updateRole(user, value as ManageableRole)}
-                  disabled={updatingUserId === user.id}
-                >
-                  <SelectTrigger className="w-full sm:w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {manageableRoles.map((role) => {
-                      const Icon = roleIcons[role]
-                      return (
-                        <SelectItem key={role} value={role}>
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            {roleLabels[role]}
-                          </div>
-                        </SelectItem>
-                      )
-                    })}
-                  </SelectContent>
-                </Select>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <Select
+                    value={(user.role || ROLES.CIVILIAN) as ManageableRole}
+                    onValueChange={(value) => updateRole(user, value as ManageableRole)}
+                    disabled={updatingUserId === user.id || deletingUserId === user.id}
+                  >
+                    <SelectTrigger className="flex-1 sm:w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {manageableRoles.map((role) => {
+                        const Icon = roleIcons[role]
+                        return (
+                          <SelectItem key={role} value={role}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              {roleLabels[role]}
+                            </div>
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => deleteUser(user)}
+                    disabled={deletingUserId === user.id}
+                    title="删除用户"
+                  >
+                    {deletingUserId === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </Button>
+                </div>
               )}
             </div>
           )

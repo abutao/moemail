@@ -135,10 +135,10 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
               <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[220px]">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-64 overflow-y-auto">
+                <SelectContent className="w-[240px]">
                   {config?.emailDomainsArray?.map(d => (
                     <SelectItem key={d} value={d}>@{d}</SelectItem>
                   ))}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Key, Plus, Loader2, Copy, Trash2, ChevronDown, ChevronUp } from "lucide-react"
+import { Key, Plus, Loader2, Copy, Trash2, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import {
   Dialog,
@@ -45,6 +45,7 @@ export function ApiKeyPanel() {
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
   const [showExamples, setShowExamples] = useState(false)
+  const [visibleKeyIds, setVisibleKeyIds] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const { checkPermission } = useRolePermission()
   const canManageApiKey = checkPermission(PERMISSIONS.MANAGE_API_KEY)
@@ -132,6 +133,18 @@ export function ApiKeyPanel() {
         variant: "destructive"
       })
     }
+  }
+
+  const toggleKeyVisibility = (id: string) => {
+    setVisibleKeyIds(current => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
   }
 
   const deleteApiKey = async (id: string) => {
@@ -283,32 +296,58 @@ export function ApiKeyPanel() {
               </div>
             ) : (
               <>
-                {apiKeys.map((key) => (
-                  <div
-                    key={key.id}
-                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                  >
-                    <div className="space-y-1">
-                      <div className="font-medium">{key.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {t("createdAt")}: {new Date(key.createdAt).toLocaleString()}
+                {apiKeys.map((key) => {
+                  const isVisible = visibleKeyIds.has(key.id)
+                  return (
+                    <div
+                      key={key.id}
+                      className="flex flex-col gap-3 p-4 rounded-lg border bg-card sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="font-medium">{key.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {t("createdAt")}: {new Date(key.createdAt).toLocaleString()}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={isVisible ? key.key : "********************************"}
+                            readOnly
+                            className="h-8 font-mono text-xs"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => toggleKeyVisibility(key.id)}
+                            title={isVisible ? "Hide API Key" : "Show API Key"}
+                          >
+                            {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => copyToClipboard(key.key)}
+                            title="Copy API Key"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <Switch
+                          checked={key.enabled}
+                          onCheckedChange={(checked) => toggleApiKey(key.id, checked)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteApiKey(key.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={key.enabled}
-                        onCheckedChange={(checked) => toggleApiKey(key.id, checked)}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteApiKey(key.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 <div className="mt-8 space-y-4">
                   <button

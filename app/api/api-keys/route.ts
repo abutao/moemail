@@ -24,10 +24,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      apiKeys: keys.map(key => ({
-        ...key,
-        key: undefined
-      }))
+      apiKeys: keys
     })
   } catch (error) {
     console.error("Failed to fetch API keys:", error)
