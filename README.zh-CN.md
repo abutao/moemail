@@ -29,6 +29,8 @@
   <a href="#发件功能">发件功能</a> •
   <a href="#Webhook 集成">Webhook 集成</a> •
   <a href="#OpenAPI">OpenAPI</a> •
+  <a href="#cli-工具">CLI 工具</a> •
+  <a href="#mcp-服务器">MCP 服务器</a> •
   <a href="#环境变量">环境变量</a> •
   <a href="#Github OAuth App 配置">Github OAuth App 配置</a> •
   <a href="#Google OAuth App 配置">Google OAuth App 配置</a> •
@@ -68,6 +70,7 @@
 - 🔔 **Webhook 通知**：支持通过 webhook 接收新邮件通知
 - 🛡️ **权限系统**：支持基于角色的权限控制系统
 - 🔑 **OpenAPI**：支持通过 API Key 访问 OpenAPI
+- 🤖 **Agent CLI**：专为 AI Agent 设计的命令行工具，自动化邮箱工作流
 - 🌍 **多语言支持**：支持中文和英文界面，可自由切换
 
 ## 技术栈
@@ -784,6 +787,108 @@ const res = await fetch('https://your-domain.com/api/emails/your-email-id/messag
 const data = await res.json();
 console.log('分享链接:', `https://your-domain.com/shared/message/${data.token}`);
 ```
+
+## CLI 工具
+
+MoeMail 提供了专为 AI Agent 设计的命令行工具，用于自动化邮箱工作流。
+
+### 安装
+
+```bash
+npm i -g @moemail/cli
+```
+
+### 快速上手
+
+```bash
+# 配置 API 地址和密钥
+moemail config set api-url https://moemail.app
+moemail config set api-key YOUR_API_KEY
+
+# 创建临时邮箱
+moemail create --domain moemail.app --expiry 1h --json
+
+# 列出邮箱
+moemail list --json
+
+# 列出邮箱内的邮件
+moemail list --email-id <id> --json
+
+# 等待新邮件（轮询）
+moemail wait --email-id <id> --timeout 120 --json
+
+# 读取邮件内容
+moemail read --email-id <id> --message-id <id> --json
+
+# 从临时地址发件
+moemail send --email-id <id> --to user@example.com --subject "你好" --content "正文内容" --json
+
+# 删除单封邮件
+moemail delete --email-id <id> --message-id <id>
+
+# 删除整个邮箱
+moemail delete --email-id <id>
+```
+
+### Agent 工作流
+
+AI Agent 仅需 3 次调用即可完成验证流程：
+
+```bash
+# 1. 创建邮箱
+EMAIL=$(moemail create --domain moemail.app --expiry 1h --json)
+EMAIL_ID=$(echo $EMAIL | jq -r '.id')
+ADDRESS=$(echo $EMAIL | jq -r '.address')
+
+# 2. 等待验证邮件
+MSG=$(moemail wait --email-id $EMAIL_ID --timeout 120 --json)
+MSG_ID=$(echo $MSG | jq -r '.messageId')
+
+# 3. 读取内容，提取验证码
+CONTENT=$(moemail read --email-id $EMAIL_ID --message-id $MSG_ID --json)
+```
+
+详细文档见 [packages/cli/README.md](packages/cli/README.md)。
+
+## MCP 服务器
+
+MoeMail 同时提供 [MCP](https://modelcontextprotocol.io) 服务器，让任意支持 MCP 的客户端
+（Claude Desktop、Cursor、Cline 等）无需调用 CLI 即可原生使用临时邮箱工具。
+
+### 工具
+
+| 工具 | 说明 |
+|------|------|
+| `create_email` | 创建临时邮箱（`1h` / `24h` / `3d` / `permanent`） |
+| `list_emails` | 列出该 API Key 下的邮箱 |
+| `list_messages` | 列出邮箱内的邮件 |
+| `read_message` | 读取邮件完整内容（文本 / HTML） |
+| `wait_for_email` | 轮询等待新邮件（有时间上限；超时返回 `status: "timeout"` 可再次调用续等） |
+| `send_email` | 从临时地址发件 |
+| `delete_email` | 删除邮箱 |
+| `delete_message` | 删除单封邮件 |
+
+### 配置
+
+在 MCP 客户端配置中加入该服务器（例如 Claude Desktop 的 `claude_desktop_config.json`），
+凭证通过环境变量传入：
+
+```json
+{
+  "mcpServers": {
+    "moemail": {
+      "command": "npx",
+      "args": ["-y", "@moemail/mcp"],
+      "env": {
+        "MOEMAIL_API_KEY": "你的_API_KEY",
+        "MOEMAIL_API_URL": "https://moemail.app"
+      }
+    }
+  }
+}
+```
+
+详细文档见 [packages/mcp/README.md](packages/mcp/README.md)。
 
 ## 环境变量
 
