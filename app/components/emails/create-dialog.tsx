@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Copy, Plus, RefreshCw } from "lucide-react"
+import { ChevronDown, Copy, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -141,7 +141,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-left text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
                   <span className="truncate">@{currentDomain}</span>
-                  <span className="ml-2 text-muted-foreground">?</span>
+                  <ChevronDown className="ml-2 h-4 w-4 text-muted-foreground" />
                 </button>
 
                 {domainDropdownOpen && (
