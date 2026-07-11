@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { nanoid } from "nanoid"
+import { customAlphabet } from "nanoid"
 import { createDb } from "@/lib/db"
 import { emails } from "@/lib/schema"
 import { eq, and, gt, sql } from "drizzle-orm"
@@ -54,7 +54,9 @@ export async function POST(request: Request) {
     }
 
     const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS")
-    const domains = domainString ? domainString.split(',') : ["moemail.app"]
+    const domains = domainString
+      ? domainString.split(',').map(domain => domain.trim()).filter(Boolean)
+      : ["moemail.app"]
 
     if (!domains || !domains.includes(domain)) {
       return NextResponse.json(
@@ -63,7 +65,8 @@ export async function POST(request: Request) {
       )
     }
 
-    const address = `${name || nanoid(8)}@${domain}`
+    const generateRandomEmailName = customAlphabet(EMAIL_CONFIG.RANDOM_EMAIL_NAME_ALPHABET, EMAIL_CONFIG.RANDOM_EMAIL_NAME_LENGTH)
+    const address = `${name || generateRandomEmailName()}@${domain}`
     const existingEmail = await db.query.emails.findFirst({
       where: eq(sql`LOWER(${emails.address})`, address.toLowerCase())
     })
