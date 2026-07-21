@@ -4,6 +4,7 @@ import { emails } from "@/lib/schema"
 import { eq, and, gt, sql } from "drizzle-orm"
 import { EXPIRY_OPTIONS } from "@/types/email"
 import { EMAIL_CONFIG } from "@/config"
+import { isDomainAllowed, normalizeDomain, parseConfiguredDomains } from "@/lib/domain"
 import { generateFriendlyEmailName } from "@/lib/email-name"
 import { getRequestContext } from "@cloudflare/next-on-pages"
 import { getUserId } from "@/lib/apiKey"
@@ -28,19 +29,19 @@ export async function POST(request: Request) {
         .where(
           and(
             eq(emails.userId, userId!),
-            gt(emails.expiresAt, new Date())
-          )
+            gt(emails.expiresAt, new Date()),
+          ),
         )
-      
+
       if (Number(activeEmailsCount[0].count) >= Number(maxEmails)) {
         return NextResponse.json(
-          { error: `已达到最大邮箱数量限制 (${maxEmails})` },
-          { status: 403 }
+          { error: `已达到最大邮箱数量限制(${maxEmails})` },
+          { status: 403 },
         )
       }
     }
 
-    const { name, expiryTime, domain } = await request.json<{ 
+    const { name, expiryTime, domain } = await request.json<{
       name: string
       expiryTime: number
       domain: string
@@ -49,59 +50,58 @@ export async function POST(request: Request) {
     if (!EXPIRY_OPTIONS.some(option => option.value === expiryTime)) {
       return NextResponse.json(
         { error: "无效的过期时间" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS")
-    const domains = domainString && domainString !== "moemail.app"
-      ? domainString.split(',').map(domain => domain.trim()).filter(Boolean)
-      : [...EMAIL_CONFIG.DEFAULT_EMAIL_DOMAINS]
+    const domains = parseConfiguredDomains(domainString)
+    const normalizedDomain = normalizeDomain(domain)
 
-    if (!domains || !domains.includes(domain)) {
+    if (!isDomainAllowed(normalizedDomain, domains)) {
       return NextResponse.json(
         { error: "无效的域名" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
-    const address = `${name || generateFriendlyEmailName()}@${domain}`
+    const address = `${name || generateFriendlyEmailName()}@${normalizedDomain}`
     const existingEmail = await db.query.emails.findFirst({
-      where: eq(sql`LOWER(${emails.address})`, address.toLowerCase())
+      where: eq(sql`LOWER(${emails.address})`, address.toLowerCase()),
     })
 
     if (existingEmail) {
       return NextResponse.json(
         { error: "该邮箱地址已被使用" },
-        { status: 409 }
+        { status: 409 },
       )
     }
 
     const now = new Date()
-    const expires = expiryTime === 0 
-      ? new Date('9999-01-01T00:00:00.000Z')
+    const expires = expiryTime === 0
+      ? new Date("9999-01-01T00:00:00.000Z")
       : new Date(now.getTime() + expiryTime)
-    
+
     const emailData: typeof emails.$inferInsert = {
       address,
       createdAt: now,
       expiresAt: expires,
-      userId: userId!
+      userId: userId!,
     }
-    
+
     const result = await db.insert(emails)
       .values(emailData)
       .returning({ id: emails.id, address: emails.address })
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       id: result[0].id,
-      email: result[0].address 
+      email: result[0].address,
     })
   } catch (error) {
-    console.error('Failed to generate email:', error)
+    console.error("Failed to generate email:", error)
     return NextResponse.json(
       { error: "创建邮箱失败" },
-      { status: 500 }
+      { status: 500 },
     )
   }
-} 
+}
