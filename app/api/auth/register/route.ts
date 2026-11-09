@@ -2,11 +2,19 @@ import { NextResponse } from "next/server"
 import { register } from "@/lib/auth"
 import { authSchema, AuthSchema } from "@/lib/validation"
 import { verifyTurnstileToken } from "@/lib/turnstile"
+import { isRegistrationEnabled } from "@/lib/registration"
 
 export const runtime = "edge"
 
 export async function POST(request: Request) {
   try {
+    if (!(await isRegistrationEnabled())) {
+      return NextResponse.json(
+        { error: "当前未开放注册" },
+        { status: 403 }
+      )
+    }
+
     const json = await request.json() as AuthSchema
     
     try {
